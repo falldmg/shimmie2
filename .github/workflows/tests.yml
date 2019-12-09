@@ -6,10 +6,9 @@ jobs:
   build:
     name: PHP ${{ matrix.php }} / DB ${{ matrix.database }}
     strategy:
-      max-parallel: 3
       fail-fast: false
       matrix:
-        php: ['7.3']
+        php: ['7.3', '7.4']
         database: ['pgsql', 'mysql', 'sqlite']
 
     runs-on: ubuntu-latest
@@ -22,13 +21,13 @@ jobs:
       with:
         php-version: ${{ matrix.php }}
         coverage: pcov
-        extension-csv: mbstring
+        extensions: mbstring, pdo-sqlite, pdo-pgsql, pdo-mysql
 
     - name: Set up database
       run: |
-        sudo apt update
         mkdir -p data/config
         if [[ "${{ matrix.database }}" == "pgsql" ]]; then
+            sudo apt update
             sudo apt-get install -y postgresql postgresql-client ;
             psql --version ;
             sudo -u postgres psql -c "SELECT set_config('log_statement', 'all', false);" -U postgres ;
@@ -43,8 +42,6 @@ jobs:
             echo '<?php define("DATABASE_DSN", "mysql:user=root;password=root;host=127.0.0.1;dbname=shimmie");' > data/config/auto_install.conf.php ;
         fi
         if [[ "${{ matrix.database }}" == "sqlite" ]]; then
-            sudo apt-get install -y sqlite3 ;
-            sqlite3 --version ;
             echo '<?php define("DATABASE_DSN", "sqlite:data/shimmie.sqlite");' > data/config/auto_install.conf.php ;
         fi
 
